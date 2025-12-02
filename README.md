@@ -1,5 +1,7 @@
 # stain
 
+[<img alt="GitHub branch check runs" src="https://img.shields.io/github/check-runs/plugd-in/stain-rs/master?style=for-the-badge">](https://github.com/plugd-in/stain-rs/actions?query=branch%3Amaster)
+
 **A compile-time, distributed plugin system for Rust.**
 
 `stain` allows you to define a trait in one module and "collect" implementations of that trait from anywhere in your dependency graph—without manually registering them in your `main` function.
