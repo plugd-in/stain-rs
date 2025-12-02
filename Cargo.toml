@@ -1,0 +1,11 @@
+[package]
+name = "stain"
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.91"
+authors = ["Reynaldo Bontje <rey.bontje80@gmail.com>"]
+
+[dependencies]
+itertools = "0.14.0"
+linkme = "0.3"
+paste = "1.0.15"
