@@ -5,6 +5,8 @@ edition = "2024"
 rust-version = "1.91"
 authors = ["Reynaldo Bontje <rey.bontje80@gmail.com>"]
 keywords = ["plugins", "traits"]
+repository = "https://github.com/plugd-in/stain-rs"
+
 
 [dependencies]
 itertools = "0.14.0"
