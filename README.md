@@ -95,7 +95,7 @@ fn main() {
 
 ## TODOs
 
-[ ] Add examples.
-[ ] Current MSRV is 1.91 due to TypeId::of const support.
-    Add support for earlier Rust versions by working around
-    the const limitation in earlier versions.
+* [ ] Add examples.
+* [ ] Current MSRV is 1.91 due to TypeId::of const support.
+      Add support for earlier Rust versions by working around
+      the const limitation in earlier versions.
