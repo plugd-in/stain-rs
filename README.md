@@ -1,6 +1,7 @@
 # stain
 
-[<img alt="GitHub branch check runs" src="https://img.shields.io/github/check-runs/plugd-in/stain-rs/master?style=for-the-badge">](https://github.com/plugd-in/stain-rs/actions?query=branch%3Amaster)
+[<img alt="GitHub" src="https://img.shields.io/badge/github-plugd--in%2Fstain--rs-blue?style=for-the-badge&logo=github">](https://github.com/plugd-in/stain-rs)
+[<img alt="Build Status" src="https://img.shields.io/github/check-runs/plugd-in/stain-rs/master?style=for-the-badge">](https://github.com/plugd-in/stain-rs/actions?query=branch%3Amaster)
 
 **A compile-time, distributed plugin system for Rust.**
 
