@@ -161,7 +161,7 @@ macro_rules! create_stain {
         prefix$(: $prefix:ident)?;
         // The module declaration for the generated module
         // that will hold the generated store.
-        store: $store_vis:vis mod $store:ident;
+        store: pub mod $store:ident;
     ) => {
         $crate::paste! {
             #[doc(hidden)]
@@ -175,8 +175,7 @@ macro_rules! create_stain {
             #[allow(non_camel_case_types)]
             type [< __STAIN_ $store:upper _ORDERING >] = $ordering;
 
-            $store_vis mod $store {
-
+            pub mod $store {
                 #[doc(hidden)]
                 #[allow(non_camel_case_types)]
                 type __STAIN_ITEM = super::[< __STAIN_ $store:upper _ITEM >];
@@ -184,108 +183,24 @@ macro_rules! create_stain {
                 #[allow(non_camel_case_types)]
                 type __STAIN_ORDERING = super::[<__STAIN_ $store:upper _ORDERING>];
 
-                $crate::__vis_mod_mapper! {
-                    vis: $store_vis,
-
-                    pub: {
-                        #[$crate::linkme::distributed_slice]
-                        #[linkme(crate = $crate::linkme)]
-                        #[doc(hidden)]
-                        #[allow(non_upper_case_globals)]
-                        pub static [< __STAIN_ $($prefix:upper)? _ $store:upper >]: [$crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>];
-                    };
-                    pub(crate): {
-                        #[$crate::linkme::distributed_slice]
-                        #[linkme(crate = $crate::linkme)]
-                        #[doc(hidden)]
-                        #[allow(non_upper_case_globals)]
-                        pub(crate) static [< __STAIN_ $($prefix:upper)? _ $store:upper >]: [$crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>];
-                    };
-                    pub(super): {
-                        #[$crate::linkme::distributed_slice]
-                        #[linkme(crate = $crate::linkme)]
-                        #[doc(hidden)]
-                        #[allow(non_upper_case_globals)]
-                        pub(in super::super) static [< __STAIN_ $($prefix:upper)? _ $store:upper >]: [$crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>];
-                    };
-                    pub(self): {
-                        #[$crate::linkme::distributed_slice]
-                        #[linkme(crate = $crate::linkme)]
-                        #[doc(hidden)]
-                        #[allow(non_upper_case_globals)]
-                        pub(super) static [< __STAIN_ $($prefix:upper)? _ $store:upper >]: [$crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>];
-                    };
-                }
+                #[$crate::linkme::distributed_slice]
+                #[linkme(crate = $crate::linkme)]
+                #[doc(hidden)]
+                #[allow(non_upper_case_globals)]
+                pub static [< __STAIN_ $($prefix:upper)? _ $store:upper >]: [$crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>];
 
                 #[doc(hidden)]
-                $crate::__vis_mod_mapper! {
-                    vis: $store_vis,
+                pub use [< __STAIN_ $($prefix:upper)? _ $store:upper >] as __STAIN_COLLECTION;
 
-                    pub: {
-                        pub use [< __STAIN_ $($prefix:upper)? _ $store:upper >] as __STAIN_COLLECTION;
-                    };
-                    pub(crate): {
-                        pub(crate) use [< __STAIN_ $($prefix:upper)? _ $store:upper >] as __STAIN_COLLECTION;
-                    };
-                    pub(super): {
-                        pub(in super::super) use [< __STAIN_ $($prefix:upper)? _ $store:upper >] as __STAIN_COLLECTION;
-                    };
-                    pub(self): {
-                        pub(super) use [< __STAIN_ $($prefix:upper)? _ $store:upper >] as __STAIN_COLLECTION;
-                    };
-                }
-
-                $crate::__vis_mod_mapper! {
-                    vis: $store_vis,
-
-                    pub: {
-                        pub struct Store {
-                            entries: std::collections::BTreeMap<
-                                __STAIN_ORDERING,
-                                std::vec::Vec<&'static $crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>>,
-                            >,
-                            type_map: std::collections::HashMap<
-                                std::any::TypeId,
-                                &'static $crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>
-                            >,
-                        }
-                    };
-                    pub(crate): {
-                        pub(crate) struct Store {
-                            entries: std::collections::BTreeMap<
-                                __STAIN_ORDERING,
-                                std::vec::Vec<&'static $crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>>,
-                            >,
-                            type_map: std::collections::HashMap<
-                                std::any::TypeId,
-                                &'static $crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>
-                            >,
-                        }
-                    };
-                    pub(super): {
-                        pub(in super::super) struct Store {
-                            entries: std::collections::BTreeMap<
-                                __STAIN_ORDERING,
-                                std::vec::Vec<&'static $crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>>,
-                            >,
-                            type_map: std::collections::HashMap<
-                                std::any::TypeId,
-                                &'static $crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>
-                            >,
-                        }
-                    };
-                    pub(self): {
-                        pub(super) struct Store {
-                            entries: std::collections::BTreeMap<
-                                __STAIN_ORDERING,
-                                std::vec::Vec<&'static $crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>>,
-                            >,
-                            type_map: std::collections::HashMap<
-                                std::any::TypeId,
-                                &'static $crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>
-                            >,
-                        }
-                    };
+                pub struct Store {
+                    entries: std::collections::BTreeMap<
+                        __STAIN_ORDERING,
+                        std::vec::Vec<&'static $crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>>,
+                    >,
+                    type_map: std::collections::HashMap<
+                        std::any::TypeId,
+                        &'static $crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>
+                    >,
                 }
 
                 impl $crate::Store for Store {
@@ -358,6 +273,475 @@ macro_rules! create_stain {
         }
     };
 
+    (
+        // The trait for which the trait-object plugin store
+        // should be generated.
+        trait $trait:ident;
+        // Some type that can be ordered via Ord, used to
+        // enable ordered plugin execution.
+        //
+        // Customization is enabled so you can, for example,
+        // use runtime values (e.g. enums) to address specific plugins.
+        ordering: $ordering:ty;
+
+        // Syntax for specifying trait generics.
+        $(type $generic:ty;)*
+        // Syntax for specifying Generic Associated Types (GATs).
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        // An optional prefix that acts as a namespace
+        // for the [linkme] section.
+        prefix$(: $prefix:ident)?;
+        // The module declaration for the generated module
+        // that will hold the generated store.
+        store: pub(crate) mod $store:ident;
+    ) => {
+        $crate::paste! {
+            #[doc(hidden)]
+            #[allow(non_camel_case_types)]
+            type [< __STAIN_ $store:upper _ITEM >] = dyn $trait<
+                $($generic,)*
+                $($associated = $associated_type,)*
+            > + Send + Sync;
+
+            #[doc(hidden)]
+            #[allow(non_camel_case_types)]
+            type [< __STAIN_ $store:upper _ORDERING >] = $ordering;
+
+            pub(crate) mod $store {
+                #[doc(hidden)]
+                #[allow(non_camel_case_types)]
+                type __STAIN_ITEM = super::[< __STAIN_ $store:upper _ITEM >];
+                #[doc(hidden)]
+                #[allow(non_camel_case_types)]
+                type __STAIN_ORDERING = super::[<__STAIN_ $store:upper _ORDERING>];
+
+                #[$crate::linkme::distributed_slice]
+                #[linkme(crate = $crate::linkme)]
+                #[doc(hidden)]
+                #[allow(non_upper_case_globals)]
+                pub(crate) static [< __STAIN_ $($prefix:upper)? _ $store:upper >]: [$crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>];
+
+                #[doc(hidden)]
+                pub(crate) use [< __STAIN_ $($prefix:upper)? _ $store:upper >] as __STAIN_COLLECTION;
+
+                pub(crate) struct Store {
+                    entries: std::collections::BTreeMap<
+                        __STAIN_ORDERING,
+                        std::vec::Vec<&'static $crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>>,
+                    >,
+                    type_map: std::collections::HashMap<
+                        std::any::TypeId,
+                        &'static $crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>
+                    >,
+                }
+
+                impl $crate::Store for Store {
+                    // Define the associated types based on macro input
+                    type Item = __STAIN_ITEM;
+                    type Ordering = __STAIN_ORDERING;
+
+                    fn collect() -> Self {
+                        use std::ops::Deref;
+                        use $crate::itertools::Itertools;
+
+                        // Note: accessing the slice via the static name generated above
+                        let type_map = [< __STAIN_ $($prefix:upper)? _ $store:upper >].deref()
+                            .into_iter()
+                            .map(|entry| (entry.type_id(), entry))
+                            .collect::<std::collections::HashMap<
+                                std::any::TypeId,
+                                &'static $crate::Entry::<Self::Ordering, Self::Item>
+                            >>();
+
+                        let entries = type_map
+                            .values()
+                            .cloned()
+                            .sorted()
+                            .chunk_by(|entry| entry.ordering().clone())
+                            .into_iter()
+                            .map(|(ordering, entries)| (ordering, entries.collect()))
+                            .collect();
+
+                        Self {
+                            entries,
+                            type_map,
+                        }
+                    }
+
+                    fn iter(&self) -> impl std::iter::Iterator<
+                        Item = $crate::EntryRef<'_, Self::Ordering, Self::Item>
+                    > {
+                        self.entries
+                            .values()
+                            .map(|entries| entries.iter())
+                            .flatten()
+                            .map(|entry| *entry)
+                            .map($crate::EntryRef::from)
+                    }
+
+                    fn ordering<'a>(&'a self, ordering: &Self::Ordering) -> Option<
+                        impl std::iter::Iterator<
+                            Item = $crate::EntryRef<'a, Self::Ordering, Self::Item>
+                        > + 'a
+                    > {
+                        let entries = self.entries.get(ordering)?;
+                        Some(
+                            entries
+                                .iter()
+                                .map(|entry| *entry)
+                                .map($crate::EntryRef::from)
+                        )
+                    }
+
+                    fn concrete<T: std::any::Any + Send + Sync>(&self) -> Option<
+                        $crate::ConcreteEntryRef<'_, T>
+                    > {
+                        self.type_map
+                            .get(&std::any::TypeId::of::<T>())?
+                            .concrete::<T>()
+                    }
+                }
+            }
+        }
+    };
+
+    (
+        // The trait for which the trait-object plugin store
+        // should be generated.
+        trait $trait:ident;
+        // Some type that can be ordered via Ord, used to
+        // enable ordered plugin execution.
+        //
+        // Customization is enabled so you can, for example,
+        // use runtime values (e.g. enums) to address specific plugins.
+        ordering: $ordering:ty;
+
+        // Syntax for specifying trait generics.
+        $(type $generic:ty;)*
+        // Syntax for specifying Generic Associated Types (GATs).
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        // An optional prefix that acts as a namespace
+        // for the [linkme] section.
+        prefix$(: $prefix:ident)?;
+        // The module declaration for the generated module
+        // that will hold the generated store.
+        store: pub(super) mod $store:ident;
+    ) => {
+        $crate::paste! {
+            #[doc(hidden)]
+            #[allow(non_camel_case_types)]
+            type [< __STAIN_ $store:upper _ITEM >] = dyn $trait<
+                $($generic,)*
+                $($associated = $associated_type,)*
+            > + Send + Sync;
+
+            #[doc(hidden)]
+            #[allow(non_camel_case_types)]
+            type [< __STAIN_ $store:upper _ORDERING >] = $ordering;
+
+            pub(super) mod $store {
+                #[doc(hidden)]
+                #[allow(non_camel_case_types)]
+                type __STAIN_ITEM = super::[< __STAIN_ $store:upper _ITEM >];
+                #[doc(hidden)]
+                #[allow(non_camel_case_types)]
+                type __STAIN_ORDERING = super::[<__STAIN_ $store:upper _ORDERING>];
+
+                #[$crate::linkme::distributed_slice]
+                #[linkme(crate = $crate::linkme)]
+                #[doc(hidden)]
+                #[allow(non_upper_case_globals)]
+                pub(in super::super) static [< __STAIN_ $($prefix:upper)? _ $store:upper >]: [$crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>];
+
+                #[doc(hidden)]
+                pub(in super::super) use [< __STAIN_ $($prefix:upper)? _ $store:upper >] as __STAIN_COLLECTION;
+
+                pub(in super::super) struct Store {
+                    entries: std::collections::BTreeMap<
+                        __STAIN_ORDERING,
+                        std::vec::Vec<&'static $crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>>,
+                    >,
+                    type_map: std::collections::HashMap<
+                        std::any::TypeId,
+                        &'static $crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>
+                    >,
+                }
+
+                impl $crate::Store for Store {
+                    // Define the associated types based on macro input
+                    type Item = __STAIN_ITEM;
+                    type Ordering = __STAIN_ORDERING;
+
+                    fn collect() -> Self {
+                        use std::ops::Deref;
+                        use $crate::itertools::Itertools;
+
+                        // Note: accessing the slice via the static name generated above
+                        let type_map = [< __STAIN_ $($prefix:upper)? _ $store:upper >].deref()
+                            .into_iter()
+                            .map(|entry| (entry.type_id(), entry))
+                            .collect::<std::collections::HashMap<
+                                std::any::TypeId,
+                                &'static $crate::Entry::<Self::Ordering, Self::Item>
+                            >>();
+
+                        let entries = type_map
+                            .values()
+                            .cloned()
+                            .sorted()
+                            .chunk_by(|entry| entry.ordering().clone())
+                            .into_iter()
+                            .map(|(ordering, entries)| (ordering, entries.collect()))
+                            .collect();
+
+                        Self {
+                            entries,
+                            type_map,
+                        }
+                    }
+
+                    fn iter(&self) -> impl std::iter::Iterator<
+                        Item = $crate::EntryRef<'_, Self::Ordering, Self::Item>
+                    > {
+                        self.entries
+                            .values()
+                            .map(|entries| entries.iter())
+                            .flatten()
+                            .map(|entry| *entry)
+                            .map($crate::EntryRef::from)
+                    }
+
+                    fn ordering<'a>(&'a self, ordering: &Self::Ordering) -> Option<
+                        impl std::iter::Iterator<
+                            Item = $crate::EntryRef<'a, Self::Ordering, Self::Item>
+                        > + 'a
+                    > {
+                        let entries = self.entries.get(ordering)?;
+                        Some(
+                            entries
+                                .iter()
+                                .map(|entry| *entry)
+                                .map($crate::EntryRef::from)
+                        )
+                    }
+
+                    fn concrete<T: std::any::Any + Send + Sync>(&self) -> Option<
+                        $crate::ConcreteEntryRef<'_, T>
+                    > {
+                        self.type_map
+                            .get(&std::any::TypeId::of::<T>())?
+                            .concrete::<T>()
+                    }
+                }
+            }
+        }
+    };
+
+    (
+        // The trait for which the trait-object plugin store
+        // should be generated.
+        trait $trait:ident;
+        // Some type that can be ordered via Ord, used to
+        // enable ordered plugin execution.
+        //
+        // Customization is enabled so you can, for example,
+        // use runtime values (e.g. enums) to address specific plugins.
+        ordering: $ordering:ty;
+
+        // Syntax for specifying trait generics.
+        $(type $generic:ty;)*
+        // Syntax for specifying Generic Associated Types (GATs).
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        // An optional prefix that acts as a namespace
+        // for the [linkme] section.
+        prefix$(: $prefix:ident)?;
+        // The module declaration for the generated module
+        // that will hold the generated store.
+        store: mod $store:ident;
+    ) => {
+        $crate::paste! {
+            #[doc(hidden)]
+            #[allow(non_camel_case_types)]
+            type [< __STAIN_ $store:upper _ITEM >] = dyn $trait<
+                $($generic,)*
+                $($associated = $associated_type,)*
+            > + Send + Sync;
+
+            #[doc(hidden)]
+            #[allow(non_camel_case_types)]
+            type [< __STAIN_ $store:upper _ORDERING >] = $ordering;
+
+            mod $store {
+                #[doc(hidden)]
+                #[allow(non_camel_case_types)]
+                type __STAIN_ITEM = super::[< __STAIN_ $store:upper _ITEM >];
+                #[doc(hidden)]
+                #[allow(non_camel_case_types)]
+                type __STAIN_ORDERING = super::[<__STAIN_ $store:upper _ORDERING>];
+
+                #[$crate::linkme::distributed_slice]
+                #[linkme(crate = $crate::linkme)]
+                #[doc(hidden)]
+                #[allow(non_upper_case_globals)]
+                pub(super) static [< __STAIN_ $($prefix:upper)? _ $store:upper >]: [$crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>];
+
+                #[doc(hidden)]
+                pub(super) use [< __STAIN_ $($prefix:upper)? _ $store:upper >] as __STAIN_COLLECTION;
+
+                pub(super) struct Store {
+                    entries: std::collections::BTreeMap<
+                        __STAIN_ORDERING,
+                        std::vec::Vec<&'static $crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>>,
+                    >,
+                    type_map: std::collections::HashMap<
+                        std::any::TypeId,
+                        &'static $crate::Entry::<__STAIN_ORDERING, __STAIN_ITEM>
+                    >,
+                }
+
+                impl $crate::Store for Store {
+                    // Define the associated types based on macro input
+                    type Item = __STAIN_ITEM;
+                    type Ordering = __STAIN_ORDERING;
+
+                    fn collect() -> Self {
+                        use std::ops::Deref;
+                        use $crate::itertools::Itertools;
+
+                        // Note: accessing the slice via the static name generated above
+                        let type_map = [< __STAIN_ $($prefix:upper)? _ $store:upper >].deref()
+                            .into_iter()
+                            .map(|entry| (entry.type_id(), entry))
+                            .collect::<std::collections::HashMap<
+                                std::any::TypeId,
+                                &'static $crate::Entry::<Self::Ordering, Self::Item>
+                            >>();
+
+                        let entries = type_map
+                            .values()
+                            .cloned()
+                            .sorted()
+                            .chunk_by(|entry| entry.ordering().clone())
+                            .into_iter()
+                            .map(|(ordering, entries)| (ordering, entries.collect()))
+                            .collect();
+
+                        Self {
+                            entries,
+                            type_map,
+                        }
+                    }
+
+                    fn iter(&self) -> impl std::iter::Iterator<
+                        Item = $crate::EntryRef<'_, Self::Ordering, Self::Item>
+                    > {
+                        self.entries
+                            .values()
+                            .map(|entries| entries.iter())
+                            .flatten()
+                            .map(|entry| *entry)
+                            .map($crate::EntryRef::from)
+                    }
+
+                    fn ordering<'a>(&'a self, ordering: &Self::Ordering) -> Option<
+                        impl std::iter::Iterator<
+                            Item = $crate::EntryRef<'a, Self::Ordering, Self::Item>
+                        > + 'a
+                    > {
+                        let entries = self.entries.get(ordering)?;
+                        Some(
+                            entries
+                                .iter()
+                                .map(|entry| *entry)
+                                .map($crate::EntryRef::from)
+                        )
+                    }
+
+                    fn concrete<T: std::any::Any + Send + Sync>(&self) -> Option<
+                        $crate::ConcreteEntryRef<'_, T>
+                    > {
+                        self.type_map
+                            .get(&std::any::TypeId::of::<T>())?
+                            .concrete::<T>()
+                    }
+                }
+            }
+        }
+    };
+
+    (
+        // The trait for which the trait-object plugin store
+        // should be generated.
+        trait $trait:ident;
+        // Some type that can be ordered via Ord, used to
+        // enable ordered plugin execution.
+        //
+        // Customization is enabled so you can, for example,
+        // use runtime values (e.g. enums) to address specific plugins.
+        ordering: $ordering:ty;
+
+        // Syntax for specifying trait generics.
+        $(type $generic:ty;)*
+        // Syntax for specifying Generic Associated Types (GATs).
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        // An optional prefix that acts as a namespace
+        // for the [linkme] section.
+        prefix$(: $prefix:ident)?;
+        // The module declaration for the generated module
+        // that will hold the generated store.
+        store: pub(self) mod $store:ident;
+    ) => {
+        $crate::create_stain {
+            trait $trait;
+            ordering: $ordering;
+
+            $(type $generic;)*
+            $(trait type $associated = $associated_type;)*
+
+            prefix$(: $prefix)?;
+            store: mod $store;
+        }
+    };
+
+    (
+        // The trait for which the trait-object plugin store
+        // should be generated.
+        trait $trait:ident;
+        // Some type that can be ordered via Ord, used to
+        // enable ordered plugin execution.
+        //
+        // Customization is enabled so you can, for example,
+        // use runtime values (e.g. enums) to address specific plugins.
+        ordering: $ordering:ty;
+
+        // Syntax for specifying trait generics.
+        $(type $generic:ty;)*
+        // Syntax for specifying Generic Associated Types (GATs).
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        // An optional prefix that acts as a namespace
+        // for the [linkme] section.
+        prefix$(: $prefix:ident)?;
+        // The module declaration for the generated module
+        // that will hold the generated store.
+        store: pub(in self) mod $store:ident;
+    ) => {
+        $crate::create_stain {
+            trait $trait;
+            ordering: $ordering;
+
+            $(type $generic;)*
+            $(trait type $associated = $associated_type;)*
+
+            prefix$(: $prefix)?;
+            store: mod $store;
+        }
+    };
+
     // Optional prefix...
     (
         trait $trait:ident;
@@ -366,7 +750,7 @@ macro_rules! create_stain {
         $(type $generic:ty;)*
         $(trait type $associated:ident = $associated_type:ty;)*
 
-        store: $store_vis:vis mod $store:ident;
+        store: mod $store:ident;
     ) => {
         $crate::create_stain! {
             trait $trait;
@@ -376,7 +760,117 @@ macro_rules! create_stain {
             $(trait type $associated = $associated_type;)*
 
             prefix; // Injected empty prefix
-            store: $store_vis mod $store;
+            store: mod $store;
+        }
+    };
+
+    // Optional prefix (pub)...
+    (
+        trait $trait:ident;
+        ordering: $ordering:ty;
+
+        $(type $generic:ty;)*
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        store: pub mod $store:ident;
+    ) => {
+        $crate::create_stain! {
+            trait $trait;
+            ordering: $ordering;
+
+            $(type $generic;)*
+            $(trait type $associated = $associated_type;)*
+
+            prefix; // Injected empty prefix
+            store: pub mod $store;
+        }
+    };
+
+    // Optional prefix (pub(crate))...
+    (
+        trait $trait:ident;
+        ordering: $ordering:ty;
+
+        $(type $generic:ty;)*
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        store: pub(crate) mod $store:ident;
+    ) => {
+        $crate::create_stain! {
+            trait $trait;
+            ordering: $ordering;
+
+            $(type $generic;)*
+            $(trait type $associated = $associated_type;)*
+
+            prefix; // Injected empty prefix
+            store: pub(crate) mod $store;
+        }
+    };
+
+    // Optional prefix (pub(super))...
+    (
+        trait $trait:ident;
+        ordering: $ordering:ty;
+
+        $(type $generic:ty;)*
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        store: pub(super) mod $store:ident;
+    ) => {
+        $crate::create_stain! {
+            trait $trait;
+            ordering: $ordering;
+
+            $(type $generic;)*
+            $(trait type $associated = $associated_type;)*
+
+            prefix; // Injected empty prefix
+            store: pub(super) mod $store;
+        }
+    };
+
+    // Optional prefix (pub(self))...
+    (
+        trait $trait:ident;
+        ordering: $ordering:ty;
+
+        $(type $generic:ty;)*
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        store: pub(self) mod $store:ident;
+    ) => {
+        $crate::create_stain! {
+            trait $trait;
+            ordering: $ordering;
+
+            $(type $generic;)*
+            $(trait type $associated = $associated_type;)*
+
+            prefix; // Injected empty prefix
+            store: mod $store;
+        }
+    };
+
+    // Optional prefix (pub(in self))...
+    (
+        trait $trait:ident;
+        ordering: $ordering:ty;
+
+        $(type $generic:ty;)*
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        store: pub(in self) mod $store:ident;
+    ) => {
+        $crate::create_stain! {
+            trait $trait;
+            ordering: $ordering;
+
+            $(type $generic;)*
+            $(trait type $associated = $associated_type;)*
+
+            prefix; // Injected empty prefix
+            store: mod $store;
         }
     };
 
@@ -388,7 +882,7 @@ macro_rules! create_stain {
         $(trait type $associated:ident = $associated_type:ty;)*
 
         prefix$(: $prefix:ident)?;
-        store: $store_vis:vis mod $store:ident;
+        store: mod $store:ident;
     ) => {
         $crate::create_stain! {
             trait $trait;
@@ -398,7 +892,117 @@ macro_rules! create_stain {
             $(trait type $associated = $associated_type;)*
 
             prefix$(: $prefix)?;
-            store: $store_vis mod $store;
+            store: mod $store;
+        }
+    };
+
+    // Optional ordering (pub)...
+    (
+        trait $trait:ident;
+
+        $(type $generic:ty;)*
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        prefix$(: $prefix:ident)?;
+        store: pub mod $store:ident;
+    ) => {
+        $crate::create_stain! {
+            trait $trait;
+            ordering: u64; // Injected default
+
+            $(type $generic;)*
+            $(trait type $associated = $associated_type;)*
+
+            prefix$(: $prefix)?;
+            store: pub mod $store;
+        }
+    };
+
+    // Optional ordering (pub(crate))...
+    (
+        trait $trait:ident;
+
+        $(type $generic:ty;)*
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        prefix$(: $prefix:ident)?;
+        store: pub(crate) mod $store:ident;
+    ) => {
+        $crate::create_stain! {
+            trait $trait;
+            ordering: u64; // Injected default
+
+            $(type $generic;)*
+            $(trait type $associated = $associated_type;)*
+
+            prefix$(: $prefix)?;
+            store: pub(crate) mod $store;
+        }
+    };
+
+    // Optional ordering (pub(super))...
+    (
+        trait $trait:ident;
+
+        $(type $generic:ty;)*
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        prefix$(: $prefix:ident)?;
+        store: pub(super) mod $store:ident;
+    ) => {
+        $crate::create_stain! {
+            trait $trait;
+            ordering: u64; // Injected default
+
+            $(type $generic;)*
+            $(trait type $associated = $associated_type;)*
+
+            prefix$(: $prefix)?;
+            store: pub(super) mod $store;
+        }
+    };
+
+    // Optional ordering (pub(self))...
+    (
+        trait $trait:ident;
+
+        $(type $generic:ty;)*
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        prefix$(: $prefix:ident)?;
+        store: pub(self) mod $store:ident;
+    ) => {
+        $crate::create_stain! {
+            trait $trait;
+            ordering: u64; // Injected default
+
+            $(type $generic;)*
+            $(trait type $associated = $associated_type;)*
+
+            prefix$(: $prefix)?;
+            store: mod $store;
+        }
+    };
+
+    // Optional ordering (pub(in self))...
+    (
+        trait $trait:ident;
+
+        $(type $generic:ty;)*
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        prefix$(: $prefix:ident)?;
+        store: pub(in self) mod $store:ident;
+    ) => {
+        $crate::create_stain! {
+            trait $trait;
+            ordering: u64; // Injected default
+
+            $(type $generic;)*
+            $(trait type $associated = $associated_type;)*
+
+            prefix$(: $prefix)?;
+            store: mod $store;
         }
     };
 
@@ -409,7 +1013,7 @@ macro_rules! create_stain {
         $(type $generic:ty;)*
         $(trait type $associated:ident = $associated_type:ty;)*
 
-        store: $store_vis:vis mod $store:ident;
+        store: mod $store:ident;
     ) => {
         $crate::create_stain! {
             trait $trait;
@@ -419,7 +1023,112 @@ macro_rules! create_stain {
             $(trait type $associated = $associated_type;)*
 
             prefix; // Injected empty prefix
-            store: $store_vis mod $store;
+            store: mod $store;
+        }
+    };
+
+    // Optional ordering and optional prefix (pub)...
+    (
+        trait $trait:ident;
+
+        $(type $generic:ty;)*
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        store: pub mod $store:ident;
+    ) => {
+        $crate::create_stain! {
+            trait $trait;
+            ordering: u64; // Injected default
+
+            $(type $generic;)*
+            $(trait type $associated = $associated_type;)*
+
+            prefix; // Injected empty prefix
+            store: pub mod $store;
+        }
+    };
+
+    // Optional ordering and optional prefix (pub (crate))...
+    (
+        trait $trait:ident;
+
+        $(type $generic:ty;)*
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        store: pub(crate) mod $store:ident;
+    ) => {
+        $crate::create_stain! {
+            trait $trait;
+            ordering: u64; // Injected default
+
+            $(type $generic;)*
+            $(trait type $associated = $associated_type;)*
+
+            prefix; // Injected empty prefix
+            store: pub(crate) mod $store;
+        }
+    };
+
+    // Optional ordering and optional prefix (pub(super))...
+    (
+        trait $trait:ident;
+
+        $(type $generic:ty;)*
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        store: pub(super) mod $store:ident;
+    ) => {
+        $crate::create_stain! {
+            trait $trait;
+            ordering: u64; // Injected default
+
+            $(type $generic;)*
+            $(trait type $associated = $associated_type;)*
+
+            prefix; // Injected empty prefix
+            store: pub(super) mod $store;
+        }
+    };
+
+    // Optional ordering and optional prefix (pub(self))...
+    (
+        trait $trait:ident;
+
+        $(type $generic:ty;)*
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        store: pub(self) mod $store:ident;
+    ) => {
+        $crate::create_stain! {
+            trait $trait;
+            ordering: u64; // Injected default
+
+            $(type $generic;)*
+            $(trait type $associated = $associated_type;)*
+
+            prefix; // Injected empty prefix
+            store: mod $store;
+        }
+    };
+
+    // Optional ordering and optional prefix (pub(in self))...
+    (
+        trait $trait:ident;
+
+        $(type $generic:ty;)*
+        $(trait type $associated:ident = $associated_type:ty;)*
+
+        store: pub(in self) mod $store:ident;
+    ) => {
+        $crate::create_stain! {
+            trait $trait;
+            ordering: u64; // Injected default
+
+            $(type $generic;)*
+            $(trait type $associated = $associated_type;)*
+
+            prefix; // Injected empty prefix
+            store: mod $store;
         }
     };
 }
