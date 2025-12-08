@@ -22,9 +22,9 @@ jobs:
     - name: MSRV Toolchain
       run: rustup toolchain install 1.83
     - name: Build (MSRV)
-      run: cargo +1.80 build --verbose
+      run: cargo +1.83 build --verbose
     - name: Run Tests (MSRV)
-      run: cargo +1.80 test --verbose
+      run: cargo +1.83 test --verbose
     - name: Run Examples (MSRV)
       run: find examples -maxdepth 1 -type d -not -path 'examples' | cut -d '/' -f 2 | xargs -I '{}' cargo +1.80 run --example '{}'
     - name: Build
