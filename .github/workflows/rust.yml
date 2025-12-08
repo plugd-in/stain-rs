@@ -20,7 +20,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: MSRV Toolchain
-      run: rustup toolchain install 1.80
+      run: rustup toolchain install 1.83
     - name: Build (MSRV)
       run: cargo +1.80 build --verbose
     - name: Run Tests (MSRV)
