@@ -134,7 +134,7 @@ pub trait Store: Sized {
 
 #[cfg(test)]
 mod store_tests {
-    use crate::{Store, create_stain, stain};
+    use crate::{create_stain, stain, Store};
 
     trait Test {
         fn test(&self) -> &'static str;
@@ -462,6 +462,7 @@ mod entry_tests {
     impl Test for TestB {}
     impl Test for TestC {}
 
+    #[rustversion::since(1.91)]
     #[test]
     fn ordering_numeric() {
         use crate::Entry;
@@ -506,6 +507,67 @@ mod entry_tests {
         assert_eq!(entries.get(2).map(|inner| inner.name()), Some("TestC"));
     }
 
+    #[rustversion::before(1.91)]
+    #[test]
+    fn ordering_numeric() {
+        use crate::Entry;
+        use std::any::{Any, TypeId};
+
+        // Out of order entries, by ordering.
+        let mut entries = vec![
+            Entry::new(
+                || TypeId::of::<TestC>(),
+                3u64,
+                "TestC",
+                || {
+                    let instance = TestC;
+                    let shared = Arc::new(instance);
+
+                    let trait_view = shared.clone() as Arc<dyn Test + Send + Sync>;
+                    let any_view = shared as Arc<dyn Any + Send + Sync>;
+
+                    (trait_view, any_view)
+                },
+            ),
+            Entry::new(
+                || TypeId::of::<TestA>(),
+                0u64,
+                "TestA",
+                || {
+                    let instance = TestA;
+                    let shared = Arc::new(instance);
+
+                    let trait_view = shared.clone() as Arc<dyn Test + Send + Sync>;
+                    let any_view = shared as Arc<dyn Any + Send + Sync>;
+
+                    (trait_view, any_view)
+                },
+            ),
+            Entry::new(
+                || TypeId::of::<TestB>(),
+                1u64,
+                "TestB",
+                || {
+                    let instance = TestB;
+                    let shared = Arc::new(instance);
+
+                    let trait_view = shared.clone() as Arc<dyn Test + Send + Sync>;
+                    let any_view = shared as Arc<dyn Any + Send + Sync>;
+
+                    (trait_view, any_view)
+                },
+            ),
+        ];
+
+        // Should sort by ordering...
+        entries.sort();
+
+        assert_eq!(entries.get(0).map(|inner| inner.name()), Some("TestA"));
+        assert_eq!(entries.get(1).map(|inner| inner.name()), Some("TestB"));
+        assert_eq!(entries.get(2).map(|inner| inner.name()), Some("TestC"));
+    }
+
+    #[rustversion::since(1.91)]
     #[test]
     fn ordering_enumerated() {
         use crate::Entry;
@@ -557,6 +619,74 @@ mod entry_tests {
         assert_eq!(entries.get(2).map(|inner| inner.name()), Some("TestC"));
     }
 
+    #[rustversion::before(1.91)]
+    #[test]
+    fn ordering_enumerated() {
+        use crate::Entry;
+        use std::any::{Any, TypeId};
+
+        #[derive(PartialEq, PartialOrd, Eq, Ord, Clone, Copy)]
+        enum Priority {
+            Low,
+            Medium,
+            High,
+        }
+
+        // Out of order entries, by ordering.
+        let mut entries = vec![
+            Entry::new(
+                || TypeId::of::<TestC>(),
+                Priority::High,
+                "TestC",
+                || {
+                    let instance = TestC;
+                    let shared = Arc::new(instance);
+
+                    let trait_view = shared.clone() as Arc<dyn Test + Send + Sync>;
+                    let any_view = shared as Arc<dyn Any + Send + Sync>;
+
+                    (trait_view, any_view)
+                },
+            ),
+            Entry::new(
+                || TypeId::of::<TestA>(),
+                Priority::Low,
+                "TestA",
+                || {
+                    let instance = TestA;
+                    let shared = Arc::new(instance);
+
+                    let trait_view = shared.clone() as Arc<dyn Test + Send + Sync>;
+                    let any_view = shared as Arc<dyn Any + Send + Sync>;
+
+                    (trait_view, any_view)
+                },
+            ),
+            Entry::new(
+                || TypeId::of::<TestB>(),
+                Priority::Medium,
+                "TestB",
+                || {
+                    let instance = TestB;
+                    let shared = Arc::new(instance);
+
+                    let trait_view = shared.clone() as Arc<dyn Test + Send + Sync>;
+                    let any_view = shared as Arc<dyn Any + Send + Sync>;
+
+                    (trait_view, any_view)
+                },
+            ),
+        ];
+
+        // Should sort by ordering...
+        entries.sort();
+
+        assert_eq!(entries.get(0).map(|inner| inner.name()), Some("TestA"));
+        assert_eq!(entries.get(1).map(|inner| inner.name()), Some("TestB"));
+        assert_eq!(entries.get(2).map(|inner| inner.name()), Some("TestC"));
+    }
+
+    #[rustversion::since(1.91)]
     #[test]
     fn concrete_downcast() {
         use crate::Entry;
@@ -571,6 +701,32 @@ mod entry_tests {
 
             (trait_view, any_view)
         });
+
+        let concrete = entry.concrete::<TestA>().as_deref().copied();
+
+        assert_eq!(concrete, Some(TestA));
+    }
+
+    #[rustversion::before(1.91)]
+    #[test]
+    fn concrete_downcast() {
+        use crate::Entry;
+        use std::any::{Any, TypeId};
+
+        let entry = Entry::new(
+            || TypeId::of::<TestA>(),
+            0u64,
+            "TestA",
+            || {
+                let instance = TestA;
+                let shared = Arc::new(instance);
+
+                let trait_view = shared.clone() as Arc<dyn Test + Send + Sync>;
+                let any_view = shared as Arc<dyn Any + Send + Sync>;
+
+                (trait_view, any_view)
+            },
+        );
 
         let concrete = entry.concrete::<TestA>().as_deref().copied();
 
