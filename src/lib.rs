@@ -83,6 +83,8 @@ pub use itertools;
 pub use linkme;
 #[doc(hidden)]
 pub use paste::paste;
+#[doc(hidden)]
+pub use rustversion;
 
 #[doc(hidden)]
 mod macros;
@@ -252,8 +254,17 @@ mod store_tests {
  * Entry
  */
 
+#[rustversion::since(1.91)]
 pub struct Entry<O, T: ?Sized> {
     type_id: TypeId,
+    ordering: O,
+    name: &'static str,
+    inner: LazyLock<(Arc<T>, Arc<dyn Any + Send + Sync>)>,
+}
+
+#[rustversion::before(1.91)]
+pub struct Entry<O, T: ?Sized> {
+    type_id: LazyLock<TypeId>,
     ordering: O,
     name: &'static str,
     inner: LazyLock<(Arc<T>, Arc<dyn Any + Send + Sync>)>,
@@ -264,6 +275,13 @@ where
     T: ?Sized,
 {
     /// Get the [TypeId] of the underlying concrete type.
+    #[rustversion::before(1.91)]
+    pub fn type_id(&self) -> TypeId {
+        *self.type_id
+    }
+
+    /// Get the [TypeId] of the underlying concrete type.
+    #[rustversion::since(1.91)]
     pub fn type_id(&self) -> TypeId {
         self.type_id
     }
@@ -297,6 +315,32 @@ where
     /// There's also a [concrete](Store::concrete) method on stores,
     /// which search for an implementation within a store based
     /// on the concrete type.
+    #[rustversion::before(1.91)]
+    pub fn concrete<C>(&self) -> Option<ConcreteEntryRef<'_, C>>
+    where
+        C: Any + Send + Sync,
+    {
+        self.inner
+            .1
+            .clone()
+            .downcast::<C>()
+            .ok()
+            .map(|concrete| ConcreteEntryRef {
+                type_id: *self.type_id,
+                name: self.name,
+                inner: concrete,
+                _phantom: Default::default(),
+            })
+    }
+
+    /// Attempts to downcast the Entry to its underlying type.
+    ///
+    /// If the cast is successful, then we return [Some] with
+    /// a view into the underlying instance of the implementation.
+    /// There's also a [concrete](Store::concrete) method on stores,
+    /// which search for an implementation within a store based
+    /// on the concrete type.
+    #[rustversion::since(1.91)]
     pub fn concrete<C>(&self) -> Option<ConcreteEntryRef<'_, C>>
     where
         C: Any + Send + Sync,
@@ -315,6 +359,27 @@ where
     }
 
     #[doc(hidden)]
+    #[rustversion::before(1.91)]
+    /// *Internal API*
+    pub const fn new(
+        type_id: fn() -> TypeId,
+        ordering: O,
+        name: &'static str,
+        init: fn() -> (Arc<T>, Arc<dyn Any + Send + Sync>),
+    ) -> Self
+    where
+        O: Ord + Clone,
+    {
+        Self {
+            inner: LazyLock::new(init),
+            type_id: LazyLock::new(type_id),
+            ordering,
+            name,
+        }
+    }
+
+    #[doc(hidden)]
+    #[rustversion::since(1.91)]
     /// *Internal API*
     pub const fn new(
         type_id: TypeId,

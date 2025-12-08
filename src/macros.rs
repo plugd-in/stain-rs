@@ -1146,6 +1146,39 @@ macro_rules! stain {
         ordering: $order:expr;
     ) => {
         $crate::paste! {
+            #[$crate::rustversion::before(1.91)]
+            const _: () = {
+                use std::any::Any;
+                use std::sync::Arc;
+
+                fn __stain_init() -> (
+                    Arc<<$store::Store as $crate::Store>::Item>,
+                    Arc<dyn Any + Send + Sync>,
+                ) {
+                    let instance: $item = Default::default();
+                    let shared_instance = Arc::new(instance);
+
+                    let trait_view = shared_instance.clone() as Arc<<$store::Store as $crate::Store>::Item>;
+                    let any_view = shared_instance as Arc<dyn Any + Send + Sync>;
+
+                    (trait_view, any_view)
+                }
+
+                #[$crate::linkme::distributed_slice($store::__STAIN_COLLECTION)]
+                #[linkme(crate = $crate::linkme)]
+                pub static _STAIN: $crate::Entry<
+                    <$store::Store as $crate::Store>::Ordering,
+                    <$store::Store as $crate::Store>::Item,
+                > =
+                $crate::Entry::<_,<$store::Store as $crate::Store>::Item>::new(
+                    || std::any::TypeId::of::<$item>(),
+                    $order,
+                    stringify!($item),
+                    __stain_init,
+                );
+            };
+
+            #[$crate::rustversion::since(1.91)]
             const _: () = {
                 use std::any::Any;
                 use std::sync::Arc;

@@ -1,8 +1,8 @@
 [package]
 name = "stain"
 version = "0.0.1"
-edition = "2024"
-rust-version = "1.91"
+edition = "2021"
+rust-version = "1.66"
 authors = ["Reynaldo Bontje <rey.bontje80@gmail.com>"]
 keywords = ["plugins", "traits"]
 repository = "https://github.com/plugd-in/stain-rs"
@@ -12,6 +12,7 @@ repository = "https://github.com/plugd-in/stain-rs"
 itertools = "0.14.0"
 linkme = "0.3"
 paste = "1.0.15"
+rustversion = "1.0.22"
 
 [dev-dependencies]
 anyhow = "1.0.100"

@@ -5,7 +5,7 @@
 
 **A compile-time, distributed plugin system for Rust.**
 
-`stain` allows you to define a trait in one module and "collect" implementations of that trait from anywhere in your dependency graph—without manually registering them in your `main` function.
+`stain` allows you to define a trait in one module and "collect" implementations of that trait from anywhere in your dependency graph—without manually registering them.
 
 It is built on top of [linkme](https://github.com/dtolnay/linkme) and provides a type-safe, ergonomic layer that handles complex Trait signatures, Generics, and Associated Types (GATs).
 
@@ -95,7 +95,7 @@ fn main() {
 
 ## TODOs
 
-* [ ] Add examples.
-* [ ] Current MSRV is 1.91 due to TypeId::of const support.
+* [1/2] Add examples.
+* [*] Current MSRV is 1.91 due to TypeId::of const support.
       Add support for earlier Rust versions by working around
       the const limitation in earlier versions.
