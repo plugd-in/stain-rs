@@ -92,10 +92,3 @@ fn main() {
 2. **`stain!`** creates a static entry in that linker section. It wraps your struct's constructor in a `LazyLock`, ensuring that your plugin is only initialized (allocated) when it is first accessed.
 
 3. **`Store::collect()`** reads the linker section at runtime, sorts the pointers based on your defined `ordering`, and prepares them for iteration.
-
-## TODOs
-
-* [1/2] Add examples.
-* [*] Current MSRV is 1.91 due to TypeId::of const support.
-      Add support for earlier Rust versions by working around
-      the const limitation in earlier versions.

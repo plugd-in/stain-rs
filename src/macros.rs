@@ -192,6 +192,7 @@ macro_rules! create_stain {
                 #[doc(hidden)]
                 pub use [< __STAIN_ $($prefix:upper)? _ $store:upper >] as __STAIN_COLLECTION;
 
+                #[derive(Clone)]
                 pub struct Store {
                     entries: std::collections::BTreeMap<
                         __STAIN_ORDERING,
@@ -325,6 +326,7 @@ macro_rules! create_stain {
                 #[doc(hidden)]
                 pub(crate) use [< __STAIN_ $($prefix:upper)? _ $store:upper >] as __STAIN_COLLECTION;
 
+                #[derive(Clone)]
                 pub(crate) struct Store {
                     entries: std::collections::BTreeMap<
                         __STAIN_ORDERING,
@@ -458,6 +460,7 @@ macro_rules! create_stain {
                 #[doc(hidden)]
                 pub(in super::super) use [< __STAIN_ $($prefix:upper)? _ $store:upper >] as __STAIN_COLLECTION;
 
+                #[derive(Clone)]
                 pub(in super::super) struct Store {
                     entries: std::collections::BTreeMap<
                         __STAIN_ORDERING,
@@ -591,6 +594,7 @@ macro_rules! create_stain {
                 #[doc(hidden)]
                 pub(super) use [< __STAIN_ $($prefix:upper)? _ $store:upper >] as __STAIN_COLLECTION;
 
+                #[derive(Clone)]
                 pub(super) struct Store {
                     entries: std::collections::BTreeMap<
                         __STAIN_ORDERING,
