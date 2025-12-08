@@ -130,6 +130,128 @@ pub trait Store: Sized {
     fn concrete<T: Any + Send + Sync>(&self) -> Option<ConcreteEntryRef<'_, T>>;
 }
 
+#[cfg(test)]
+mod store_tests {
+    use crate::{Store, create_stain, stain};
+
+    trait Test {
+        fn test(&self) -> &'static str;
+    }
+
+    create_stain! {
+        trait Test;
+        store: mod test;
+    }
+
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+    struct TestA;
+
+    impl Test for TestA {
+        fn test(&self) -> &'static str {
+            "TestA"
+        }
+    }
+
+    stain! {
+        store: test;
+        item: TestA;
+        ordering: 0;
+    }
+
+    #[derive(Default)]
+    struct TestB;
+
+    impl Test for TestB {
+        fn test(&self) -> &'static str {
+            "TestB"
+        }
+    }
+
+    stain! {
+        store: test;
+        item: TestB;
+        ordering: 1;
+    }
+
+    #[derive(Default)]
+    struct TestC;
+
+    impl Test for TestC {
+        fn test(&self) -> &'static str {
+            "TestC"
+        }
+    }
+
+    stain! {
+        store: test;
+        item: TestC;
+        ordering: 1;
+    }
+
+    #[test]
+    fn concrete_downcast() {
+        let store = test::Store::collect();
+        let maybe_concrete = store.concrete::<TestA>();
+        let maybe_concrete = maybe_concrete.as_deref();
+
+        assert_eq!(maybe_concrete.copied(), Some(TestA));
+
+        let concrete = maybe_concrete.expect("TestA, by assertion.");
+        assert_eq!(concrete.test(), "TestA");
+    }
+
+    #[test]
+    fn single_ordering() {
+        let store = test::Store::collect();
+        let ordering = store.ordering(&0);
+        assert!(ordering.is_some());
+
+        let mut ordering = ordering.expect("Ordering, by assertion.");
+        let maybe_test_a = ordering.next().map(|entry| entry.name());
+
+        assert_eq!(maybe_test_a, Some("TestA"));
+        assert!(ordering.next().is_none());
+    }
+
+    #[test]
+    fn multi_ordering() {
+        let store = test::Store::collect();
+        let ordering = store.ordering(&1);
+        assert!(ordering.is_some());
+
+        let mut ordering = ordering.expect("Ordering, by assertion.");
+
+        let maybe_test_b_or_c = ordering.next().map(|entry| entry.name());
+        assert!(maybe_test_b_or_c == Some("TestB") || maybe_test_b_or_c == Some("TestC"));
+
+        let maybe_test_b_or_c = ordering.next().map(|entry| entry.name());
+        assert!(maybe_test_b_or_c == Some("TestB") || maybe_test_b_or_c == Some("TestC"));
+
+        assert!(ordering.next().is_none());
+    }
+
+    #[test]
+    fn iter_all() {
+        let store = test::Store::collect();
+        let mut store_iter = store.iter();
+
+        let maybe_test_a = store_iter.next().map(|entry| entry.name());
+        assert_eq!(maybe_test_a, Some("TestA"));
+
+        let maybe_test_b_or_c = store_iter.next().map(|entry| entry.name());
+        assert!(maybe_test_b_or_c == Some("TestB") || maybe_test_b_or_c == Some("TestC"));
+
+        let maybe_test_b_or_c = store_iter.next().map(|entry| entry.name());
+        assert!(maybe_test_b_or_c == Some("TestB") || maybe_test_b_or_c == Some("TestC"));
+
+        assert!(store_iter.next().is_none());
+    }
+}
+
+/***
+ * Entry
+ */
+
 pub struct Entry<O, T: ?Sized> {
     type_id: TypeId,
     ordering: O,
@@ -137,52 +259,89 @@ pub struct Entry<O, T: ?Sized> {
     inner: LazyLock<(Arc<T>, Arc<dyn Any + Send + Sync>)>,
 }
 
-pub struct ConcreteEntryRef<'e, C> {
-    type_id: TypeId,
-    name: &'static str,
-    inner: Arc<C>,
-    _phantom: PhantomData<&'e ()>,
-}
-
-impl<'e, C> ConcreteEntryRef<'e, C> {
+impl<O, T> Entry<O, T>
+where
+    T: ?Sized,
+{
+    /// Get the [TypeId] of the underlying concrete type.
     pub fn type_id(&self) -> TypeId {
         self.type_id
     }
 
+    /// Get the ordering of this [Entry] in the store.
+    ///
+    /// There's a simliar operation available to [stores](Store),
+    /// [ordering](Store::ordering), which fetches all
+    /// implementations/entries with a specific ordering.
+    ///
+    /// *Note:* It is valid for implementations/entries
+    /// to have the same ordering.
+    pub fn ordering(&self) -> &O {
+        &self.ordering
+    }
+
+    /// Get the name of the registered implementation.
+    ///
+    /// *Note:* This is just the `stringify!(..)`d name of the
+    /// implementation that was passed into the `stain! {...}` macro.
+    /// The main use of this is for logging/debugging. The use of this
+    /// field for application logic is discouraged.
     pub fn name(&self) -> &'static str {
         self.name
     }
+
+    /// Attempts to downcast the Entry to its underlying type.
+    ///
+    /// If the cast is successful, then we return [Some] with
+    /// a view into the underlying instance of the implementation.
+    /// There's also a [concrete](Store::concrete) method on stores,
+    /// which search for an implementation within a store based
+    /// on the concrete type.
+    pub fn concrete<C>(&self) -> Option<ConcreteEntryRef<'_, C>>
+    where
+        C: Any + Send + Sync,
+    {
+        self.inner
+            .1
+            .clone()
+            .downcast::<C>()
+            .ok()
+            .map(|concrete| ConcreteEntryRef {
+                type_id: self.type_id,
+                name: self.name,
+                inner: concrete,
+                _phantom: Default::default(),
+            })
+    }
+
+    #[doc(hidden)]
+    /// *Internal API*
+    pub const fn new(
+        type_id: TypeId,
+        ordering: O,
+        name: &'static str,
+        init: fn() -> (Arc<T>, Arc<dyn Any + Send + Sync>),
+    ) -> Self
+    where
+        O: Ord + Clone,
+    {
+        Self {
+            inner: LazyLock::new(init),
+            ordering,
+            name,
+            type_id,
+        }
+    }
 }
 
-impl<'e, C> Deref for ConcreteEntryRef<'e, C> {
-    type Target = C;
+impl<O, T> Deref for Entry<O, T>
+where
+    T: ?Sized,
+{
+    type Target = T;
 
     fn deref(&self) -> &Self::Target {
-        self.inner.deref()
-    }
-}
-
-pub struct EntryRef<'e, O, T>(&'e Entry<O, T>)
-where
-    T: ?Sized;
-
-impl<'e, O, T> Deref for EntryRef<'e, O, T>
-where
-    T: ?Sized,
-{
-    type Target = Entry<O, T>;
-
-    fn deref(&self) -> &'e Self::Target {
-        &self.0
-    }
-}
-
-impl<'e, O, T> From<&'e Entry<O, T>> for EntryRef<'e, O, T>
-where
-    T: ?Sized,
-{
-    fn from(value: &'e Entry<O, T>) -> Self {
-        Self(value)
+        self.inner.0.deref()
     }
 }
 
@@ -223,65 +382,190 @@ where
     }
 }
 
-impl<O, T> Entry<O, T>
-where
-    T: ?Sized,
-{
-    pub fn type_id(&self) -> TypeId {
-        self.type_id
+#[cfg(test)]
+mod entry_tests {
+    use std::sync::Arc;
+
+    trait Test {}
+
+    #[derive(PartialEq, Eq, Clone, Copy, Debug)]
+    struct TestA;
+    struct TestB;
+    struct TestC;
+
+    impl Test for TestA {}
+    impl Test for TestB {}
+    impl Test for TestC {}
+
+    #[test]
+    fn ordering_numeric() {
+        use crate::Entry;
+        use std::any::{Any, TypeId};
+
+        // Out of order entries, by ordering.
+        let mut entries = vec![
+            Entry::new(TypeId::of::<TestC>(), 3u64, "TestC", || {
+                let instance = TestC;
+                let shared = Arc::new(instance);
+
+                let trait_view = shared.clone() as Arc<dyn Test + Send + Sync>;
+                let any_view = shared as Arc<dyn Any + Send + Sync>;
+
+                (trait_view, any_view)
+            }),
+            Entry::new(TypeId::of::<TestA>(), 0u64, "TestA", || {
+                let instance = TestA;
+                let shared = Arc::new(instance);
+
+                let trait_view = shared.clone() as Arc<dyn Test + Send + Sync>;
+                let any_view = shared as Arc<dyn Any + Send + Sync>;
+
+                (trait_view, any_view)
+            }),
+            Entry::new(TypeId::of::<TestB>(), 1u64, "TestB", || {
+                let instance = TestB;
+                let shared = Arc::new(instance);
+
+                let trait_view = shared.clone() as Arc<dyn Test + Send + Sync>;
+                let any_view = shared as Arc<dyn Any + Send + Sync>;
+
+                (trait_view, any_view)
+            }),
+        ];
+
+        // Should sort by ordering...
+        entries.sort();
+
+        assert_eq!(entries.get(0).map(|inner| inner.name()), Some("TestA"));
+        assert_eq!(entries.get(1).map(|inner| inner.name()), Some("TestB"));
+        assert_eq!(entries.get(2).map(|inner| inner.name()), Some("TestC"));
     }
 
-    pub fn ordering(&self) -> &O {
-        &self.ordering
+    #[test]
+    fn ordering_enumerated() {
+        use crate::Entry;
+        use std::any::{Any, TypeId};
+
+        #[derive(PartialEq, PartialOrd, Eq, Ord, Clone, Copy)]
+        enum Priority {
+            Low,
+            Medium,
+            High,
+        }
+
+        // Out of order entries, by ordering.
+        let mut entries = vec![
+            Entry::new(TypeId::of::<TestC>(), Priority::High, "TestC", || {
+                let instance = TestC;
+                let shared = Arc::new(instance);
+
+                let trait_view = shared.clone() as Arc<dyn Test + Send + Sync>;
+                let any_view = shared as Arc<dyn Any + Send + Sync>;
+
+                (trait_view, any_view)
+            }),
+            Entry::new(TypeId::of::<TestA>(), Priority::Low, "TestA", || {
+                let instance = TestA;
+                let shared = Arc::new(instance);
+
+                let trait_view = shared.clone() as Arc<dyn Test + Send + Sync>;
+                let any_view = shared as Arc<dyn Any + Send + Sync>;
+
+                (trait_view, any_view)
+            }),
+            Entry::new(TypeId::of::<TestB>(), Priority::Medium, "TestB", || {
+                let instance = TestB;
+                let shared = Arc::new(instance);
+
+                let trait_view = shared.clone() as Arc<dyn Test + Send + Sync>;
+                let any_view = shared as Arc<dyn Any + Send + Sync>;
+
+                (trait_view, any_view)
+            }),
+        ];
+
+        // Should sort by ordering...
+        entries.sort();
+
+        assert_eq!(entries.get(0).map(|inner| inner.name()), Some("TestA"));
+        assert_eq!(entries.get(1).map(|inner| inner.name()), Some("TestB"));
+        assert_eq!(entries.get(2).map(|inner| inner.name()), Some("TestC"));
+    }
+
+    #[test]
+    fn concrete_downcast() {
+        use crate::Entry;
+        use std::any::{Any, TypeId};
+
+        let entry = Entry::new(TypeId::of::<TestA>(), 0u64, "TestA", || {
+            let instance = TestA;
+            let shared = Arc::new(instance);
+
+            let trait_view = shared.clone() as Arc<dyn Test + Send + Sync>;
+            let any_view = shared as Arc<dyn Any + Send + Sync>;
+
+            (trait_view, any_view)
+        });
+
+        let concrete = entry.concrete::<TestA>().as_deref().copied();
+
+        assert_eq!(concrete, Some(TestA));
+    }
+}
+
+/***
+ * Concrete Entry
+ */
+
+pub struct ConcreteEntryRef<'e, C> {
+    type_id: TypeId,
+    name: &'static str,
+    inner: Arc<C>,
+    _phantom: PhantomData<&'e ()>,
+}
+
+impl<'e, C> ConcreteEntryRef<'e, C> {
+    pub fn type_id(&self) -> TypeId {
+        self.type_id
     }
 
     pub fn name(&self) -> &'static str {
         self.name
     }
+}
 
-    pub fn concrete<C>(&self) -> Option<ConcreteEntryRef<'_, C>>
-    where
-        C: Any + Send + Sync,
-    {
-        self.inner
-            .1
-            .clone()
-            .downcast::<C>()
-            .ok()
-            .map(|concrete| ConcreteEntryRef {
-                type_id: self.type_id,
-                name: self.name,
-                inner: concrete,
-                _phantom: Default::default(),
-            })
-    }
+impl<'e, C> Deref for ConcreteEntryRef<'e, C> {
+    type Target = C;
 
-    #[doc(hidden)]
-    pub const fn new(
-        type_id: TypeId,
-        ordering: O,
-        name: &'static str,
-        init: fn() -> (Arc<T>, Arc<dyn Any + Send + Sync>),
-    ) -> Self
-    where
-        O: Ord + Clone,
-    {
-        Self {
-            inner: LazyLock::new(init),
-            ordering,
-            name,
-            type_id,
-        }
+    fn deref(&self) -> &Self::Target {
+        self.inner.deref()
     }
 }
 
-impl<O, T> Deref for Entry<O, T>
+/***
+ * Entry Ref
+ */
+
+pub struct EntryRef<'e, O, T>(&'e Entry<O, T>)
+where
+    T: ?Sized;
+
+impl<'e, O, T> Deref for EntryRef<'e, O, T>
 where
     T: ?Sized,
 {
-    type Target = T;
+    type Target = Entry<O, T>;
 
-    fn deref(&self) -> &Self::Target {
-        self.inner.0.deref()
+    fn deref(&self) -> &'e Self::Target {
+        &self.0
+    }
+}
+
+impl<'e, O, T> From<&'e Entry<O, T>> for EntryRef<'e, O, T>
+where
+    T: ?Sized,
+{
+    fn from(value: &'e Entry<O, T>) -> Self {
+        Self(value)
     }
 }

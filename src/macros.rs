@@ -1147,7 +1147,6 @@ macro_rules! stain {
     ) => {
         $crate::paste! {
             const _: () = {
-                use $crate::Store;
                 use std::any::Any;
                 use std::sync::Arc;
 
